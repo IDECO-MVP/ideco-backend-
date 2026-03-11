@@ -5,6 +5,7 @@ import profileRoute from './modules/profiles/profile.route';
 import postRoute from './modules/posts/post.route';
 import projectRoute from './modules/projects/project.route';
 import collaborationRoute from './modules/collaborations/collaboration.route';
+import userSkillLevelRoute from './modules/userSkillLevels/userSkillLevel.route';
 
 const router = Router();
 
@@ -15,5 +16,6 @@ router.use('/profiles', profileRoute);
 router.use('/posts', postRoute);
 router.use('/projects', projectRoute);
 router.use('/collaborations', collaborationRoute);
+router.use('/user-skill-levels', userSkillLevelRoute);
 
 export default router;

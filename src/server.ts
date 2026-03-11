@@ -5,6 +5,8 @@ import './modules/errors/error.model';
 import './modules/profiles/profile.model';
 import './modules/posts/post.model';
 import './modules/projects/project.model';
+import './modules/collaborations/collaboration.model';
+import './modules/userSkillLevels/userSkillLevel.model';
 
 const PORT = process.env.PORT || 5000;
 
