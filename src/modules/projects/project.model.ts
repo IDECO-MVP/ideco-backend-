@@ -11,6 +11,8 @@ export class Project extends Model {
     public skills!: string[];
     public userId!: number;
     public addInFeuturedWork!: boolean;
+    public link!: string;
+    public seekings!: string[];
 
     // timestamps
     public readonly createdAt!: Date;
@@ -58,6 +60,15 @@ Project.init(
             type: DataTypes.BOOLEAN,
             allowNull: false,
             defaultValue: false,
+        },
+        link: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        seekings: {
+            type: DataTypes.ARRAY(DataTypes.STRING),
+            allowNull: true,
+            defaultValue: [],
         },
     },
     {

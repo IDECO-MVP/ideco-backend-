@@ -12,11 +12,15 @@ import { getPagination, getPagingData } from '../../utils/pagination';
 export const createProject = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
-        const { title, status, description, addInFeuturedWork } = req.body;
+        const { title, status, description, addInFeuturedWork, link, seekings } = req.body;
         let imageUrl = req.body.image;
 
         if (req.file) {
             imageUrl = await uploadToCloudinary(req.file.buffer, 'projects');
+        }
+
+        if (link && !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(link)) {
+            return res.status(400).json(ApiResponse.error('Invalid URL for link'));
         }
 
         const project = await Project.create({
@@ -26,7 +30,9 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
             description,
             skills: parseInputArray(req.body.skills),
             userId,
-            addInFeuturedWork: addInFeuturedWork === 'true' || addInFeuturedWork === true
+            addInFeuturedWork: addInFeuturedWork === 'true' || addInFeuturedWork === true,
+            link,
+            seekings: parseInputArray(seekings)
         });
 
         return res.status(201).json(ApiResponse.success('Project created successfully', project));
@@ -167,13 +173,19 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
             imageUrl = await uploadToCloudinary(req.file.buffer, 'projects');
         }
 
+        if (req.body.link && !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(req.body.link)) {
+            return res.status(400).json(ApiResponse.error('Invalid URL for link'));
+        }
+
         await project.update({
             image: imageUrl,
             title: req.body.title || project.title,
             status: req.body.status || project.status,
             description: req.body.description || project.description,
             skills: req.body.skills ? parseInputArray(req.body.skills) : project.skills,
-            addInFeuturedWork: req.body.addInFeuturedWork !== undefined ? (req.body.addInFeuturedWork === 'true' || req.body.addInFeuturedWork === true) : project.addInFeuturedWork
+            addInFeuturedWork: req.body.addInFeuturedWork !== undefined ? (req.body.addInFeuturedWork === 'true' || req.body.addInFeuturedWork === true) : project.addInFeuturedWork,
+            link: req.body.link || project.link,
+            seekings: req.body.seekings ? parseInputArray(req.body.seekings) : project.seekings
         });
 
         return res.status(200).json(ApiResponse.success('Project updated successfully', project));

@@ -22,6 +22,20 @@ export const getMyProfile = async (req: Request, res: Response, next: NextFuncti
     }
 };
 
+export const getProfileByUserId = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { userId } = req.params;
+        const profile = await Profile.findOne({ where: { userId: Number(userId) } });
+
+        if (!profile) {
+            return res.status(404).json(ApiResponse.error('Profile not found'));
+        }  
+        return res.status(200).json(ApiResponse.success('Profile fetched successfully', profile));
+    } catch (error: any) {
+        next(error);
+    }
+};
+
 /**
  * Helper to handle file uploads to Cloudinary
  */
