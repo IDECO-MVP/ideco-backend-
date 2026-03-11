@@ -4,6 +4,7 @@ import errorRoute from './modules/errors/error.route';
 import profileRoute from './modules/profiles/profile.route';
 import postRoute from './modules/posts/post.route';
 import projectRoute from './modules/projects/project.route';
+import collaborationRoute from './modules/collaborations/collaboration.route';
 
 const router = Router();
 
@@ -13,5 +14,6 @@ router.use('/errors', errorRoute);
 router.use('/profiles', profileRoute);
 router.use('/posts', postRoute);
 router.use('/projects', projectRoute);
+router.use('/collaborations', collaborationRoute);
 
 export default router;

@@ -125,11 +125,26 @@ export const getFeaturedProjectsByUserId = async (req: Request, res: Response, n
 export const getMyProjects = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
-        const projects = await Project.findAll({
-            where: { userId },
-            order: [['createdAt', 'DESC']]
+        const { page, limit, status } = req.query;
+        const { offset, limit: l } = getPagination(page, limit);
+
+        const where: any = { userId };
+        const statusValue = typeof status === 'string' ? status.trim() : undefined;
+        if (statusValue) {
+            where.status = statusValue;
+        }
+
+        const { count, rows: projects } = await Project.findAndCountAll({
+            where,
+            include: [{ model: User, as: 'user', attributes: ['id', 'email'] }],
+            order: [['createdAt', 'DESC']],
+            limit: l,
+            offset: offset
         });
-        return res.status(200).json(ApiResponse.success('My projects fetched successfully', projects));
+
+        const metadata = getPagingData(count, page, l);
+
+        return res.status(200).json(ApiResponse.successWithPagination('My projects fetched successfully', projects, metadata));
     } catch (error: any) {
         next(error);
     }
