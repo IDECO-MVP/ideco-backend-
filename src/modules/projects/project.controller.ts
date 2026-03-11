@@ -5,6 +5,7 @@ import { User } from '../users/user.model';
 import { uploadToCloudinary } from '../../utils/cloudinary';
 import { parseInputArray } from '../../utils/parser';
 import { getPagination, getPagingData } from '../../utils/pagination';
+import { Op } from 'sequelize';
 
 /**
  * Create a new project
@@ -46,27 +47,46 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
  */
 export const getAllProjects = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { page, limit, status } = req.query;
+        const { page, limit, status, skills } = req.query;
+
         const { offset, limit: l } = getPagination(page, limit);
 
         const where: any = {};
-        const statusValue = typeof status === 'string' ? status.trim() : undefined;
+
+        // status filter
+        const statusValue = typeof status === "string" ? status.trim() : undefined;
         if (statusValue) {
-            // Direct match against stored status values
             where.status = statusValue;
+        }
+
+        // skills filter
+        if (skills && typeof skills === "string") {
+            const skillsArray = skills.split(",").map((s) => s.trim());
+
+            where.skills = {
+                [Op.overlap]: skillsArray
+            };
         }
 
         const { count, rows: projects } = await Project.findAndCountAll({
             where,
-            include: [{ model: User, as: 'user', attributes: ['id', 'email'] }],
-            order: [['createdAt', 'DESC']],
+            include: [
+                {
+                    model: User,
+                    as: "user",
+                    attributes: ["id", "email"],
+                },
+            ],
+            order: [["createdAt", "DESC"]],
             limit: l,
-            offset: offset
+            offset: offset,
         });
 
         const metadata = getPagingData(count, page, l);
 
-        return res.status(200).json(ApiResponse.successWithPagination('Projects fetched successfully', projects, metadata));
+        return res
+            .status(200)
+            .json(ApiResponse.successWithPagination("Projects fetched successfully", projects, metadata));
     } catch (error: any) {
         next(error);
     }
