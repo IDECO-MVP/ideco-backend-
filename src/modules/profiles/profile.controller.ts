@@ -30,11 +30,11 @@ const handleFileUploads = async (req: Request) => {
     const uploadData: any = {};
 
     if (files?.avatar?.[0]) {
-        uploadData.avatar = await uploadToCloudinary(files.avatar[0].path, 'avatars');
+        uploadData.avatar = await uploadToCloudinary(files.avatar[0].buffer, 'avatars');
     }
 
     if (files?.coverImage?.[0]) {
-        uploadData.coverImage = await uploadToCloudinary(files.coverImage[0].path, 'covers');
+        uploadData.coverImage = await uploadToCloudinary(files.coverImage[0].buffer, 'covers');
     }
 
     return uploadData;

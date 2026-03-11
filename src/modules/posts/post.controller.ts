@@ -16,7 +16,7 @@ export const createPost = async (req: Request, res: Response, next: NextFunction
         let imageUrl = req.body.image;
 
         if (req.file) {
-            imageUrl = await uploadToCloudinary(req.file.path, 'posts');
+            imageUrl = await uploadToCloudinary(req.file.buffer, 'posts');
         }
 
         const post = await Post.create({
@@ -131,7 +131,7 @@ export const updatePost = async (req: Request, res: Response, next: NextFunction
 
         let imageUrl = req.body.image || post.image;
         if (req.file) {
-            imageUrl = await uploadToCloudinary(req.file.path, 'posts');
+            imageUrl = await uploadToCloudinary(req.file.buffer, 'posts');
         }
 
         await post.update({

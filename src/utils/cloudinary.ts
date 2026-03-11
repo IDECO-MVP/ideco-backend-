@@ -1,6 +1,5 @@
 import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
-import fs from 'fs';
 
 dotenv.config();
 
@@ -11,31 +10,25 @@ cloudinary.config({
 });
 
 /**
- * Upload file to Cloudinary
- * @param filePath Local path of the file
+ * Upload file buffer to Cloudinary
+ * @param fileBuffer File buffer
  * @param folder Cloudinary folder name
  */
-export const uploadToCloudinary = async (filePath: string, folder: string) => {
-    try {
-        const timestamp = Math.round(new Date().getTime() / 1000);
-        const result = await cloudinary.uploader.upload(filePath, {
-            folder: `ideco/${folder}`,
-            use_filename: true,
-            unique_filename: true,
-            timestamp: timestamp,
-        });
+export const uploadToCloudinary = async (fileBuffer: Buffer, folder: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+            {
+                folder: `ideco/${folder}`,
+                use_filename: true,
+                unique_filename: true,
+            },
+            (error, result) => {
+                if (error) return reject(error);
+                if (!result) return reject(new Error('Cloudinary upload failed: No result'));
+                resolve(result.secure_url);
+            }
+        );
 
-        // Remove file from local storage after upload
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-        }
-
-        return result.secure_url;
-    } catch (error) {
-        // Clean up local file even on error
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-        }
-        throw error;
-    }
+        uploadStream.end(fileBuffer);
+    });
 };

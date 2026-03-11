@@ -16,7 +16,7 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
         let imageUrl = req.body.image;
 
         if (req.file) {
-            imageUrl = await uploadToCloudinary(req.file.path, 'projects');
+            imageUrl = await uploadToCloudinary(req.file.buffer, 'projects');
         }
 
         const project = await Project.create({
@@ -149,7 +149,7 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
 
         let imageUrl = req.body.image || project.image;
         if (req.file) {
-            imageUrl = await uploadToCloudinary(req.file.path, 'projects');
+            imageUrl = await uploadToCloudinary(req.file.buffer, 'projects');
         }
 
         await project.update({
