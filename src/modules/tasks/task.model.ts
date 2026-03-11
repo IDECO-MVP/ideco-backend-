@@ -34,7 +34,7 @@ Task.init(
             allowNull: true,
         },
         status: {
-            type: DataTypes.ENUM("todo", "in-progress", "completed", "on-hold"),
+            type: DataTypes.ENUM("todo", "inProgress", "completed", "onHold"),
             allowNull: false,
             defaultValue: "todo",
         },
