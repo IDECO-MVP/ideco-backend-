@@ -13,6 +13,7 @@ export class Project extends Model {
     public addInFeuturedWork!: boolean;
     public link!: string;
     public seekings!: string[];
+    public opened!: boolean;
 
     // timestamps
     public readonly createdAt!: Date;
@@ -69,6 +70,11 @@ Project.init(
             type: DataTypes.ARRAY(DataTypes.STRING),
             allowNull: true,
             defaultValue: [],
+        },
+        opened: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: true,
         },
     },
     {

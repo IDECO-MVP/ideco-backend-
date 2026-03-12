@@ -3,6 +3,8 @@ import { Collaboration } from './collaboration.model';
 import { Project } from '../projects/project.model';
 import { User } from '../users/user.model';
 import { ApiResponse } from '../../utils/response';
+import { Profile } from '../profiles/profile.model';
+import { userWithProfileInclude } from '../users/user.service';
 
 /**
  * Apply to a project
@@ -63,11 +65,51 @@ export const getCollaborationRequests = async (req: Request, res: Response, next
 
         const requests = await Collaboration.findAll({
             where: { projectId: Number(projectId) },
-            include: [{ model: User, as: 'user', attributes: ['id', 'email'] }],
+            include: [userWithProfileInclude],
             order: [['createdAt', 'DESC']]
         });
 
         return res.status(200).json(ApiResponse.success('Collaboration requests fetched successfully', requests));
+    } catch (error: any) {
+        next(error);
+    }
+};
+
+/**
+ * Get all collaboration requests for all projects owned by the logged-in user
+ */
+export const getAllMyProjectRequests = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = (req as any).user.id;
+
+        // 1. Get all project IDs owned by this user
+        const projects = await Project.findAll({
+            where: { userId },
+            attributes: ['id']
+        });
+
+        const projectIds = projects.map(p => p.id);
+
+        if (projectIds.length === 0) {
+            return res.status(200).json(ApiResponse.success('No projects found', []));
+        }
+
+        // 2. Get all collaborations for these projects
+        const collaborations = await Collaboration.findAll({
+            where: {
+                projectId: projectIds
+            },
+            include: [
+                {
+                    model: Project,
+                    as: 'project'
+                },
+                userWithProfileInclude
+            ],
+            order: [['createdAt', 'DESC']]
+        });
+
+        return res.status(200).json(ApiResponse.success('All project collaboration requests fetched successfully', collaborations));
     } catch (error: any) {
         next(error);
     }
@@ -116,7 +158,7 @@ export const getProjectCollaborators = async (req: Request, res: Response, next:
 
         const collaborators = await Collaboration.findAll({
             where: { projectId: Number(projectId), status: 'approved' },
-            include: [{ model: User, as: 'user', attributes: ['id', 'email'] }]
+            include: [userWithProfileInclude]
         });
 
         return res.status(200).json(ApiResponse.success('Collaborators fetched successfully', collaborators));

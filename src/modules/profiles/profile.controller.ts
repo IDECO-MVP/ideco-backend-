@@ -3,6 +3,7 @@ import { Profile } from './profile.model';
 import { ApiResponse } from '../../utils/response';
 import { uploadToCloudinary } from '../../utils/cloudinary';
 import { parseInputArray } from '../../utils/parser';
+import { getUserFullData } from '../users/user.service';
 
 /**
  * Get logged-in user's profile
@@ -25,12 +26,12 @@ export const getMyProfile = async (req: Request, res: Response, next: NextFuncti
 export const getProfileByUserId = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { userId } = req.params;
-        const profile = await Profile.findOne({ where: { userId: Number(userId) } });
+        const user = await getUserFullData(Number(userId));
 
-        if (!profile) {
-            return res.status(404).json(ApiResponse.error('Profile not found'));
-        }  
-        return res.status(200).json(ApiResponse.success('Profile fetched successfully', profile));
+        if (!user) {
+            return res.status(404).json(ApiResponse.error('User or profile not found'));
+        }
+        return res.status(200).json(ApiResponse.success('User and profile fetched successfully', user));
     } catch (error: any) {
         next(error);
     }

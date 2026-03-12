@@ -4,6 +4,7 @@ import { upload } from '../../middleware/upload';
 import {
     createProject,
     getAllProjects,
+    getAllOpenProjects,
     getProjectById,
     getProjectsByUserId,
     updateProject,
@@ -16,6 +17,7 @@ const router = Router();
 
 // Public routes
 router.get('/', getAllProjects);
+router.get('/open', getAllOpenProjects);
 router.get('/get/:id', getProjectById);
 router.get('/user/:userId', getProjectsByUserId);
 router.get('/featured/:userId', getFeaturedProjectsByUserId); // Get featured projects by user ID

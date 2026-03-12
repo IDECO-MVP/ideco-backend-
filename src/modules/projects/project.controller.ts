@@ -13,7 +13,7 @@ import { Op } from 'sequelize';
 export const createProject = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
-        const { title, status, description, addInFeuturedWork, link, seekings } = req.body;
+        const { title, status, description, addInFeuturedWork, link, seekings, opened } = req.body;
         let imageUrl = req.body.image;
 
         if (req.file) {
@@ -33,7 +33,8 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
             userId,
             addInFeuturedWork: addInFeuturedWork === 'true' || addInFeuturedWork === true,
             link,
-            seekings: parseInputArray(seekings)
+            seekings: parseInputArray(seekings),
+            opened: opened !== undefined ? (opened === 'true' || opened === true) : true
         });
 
         return res.status(201).json(ApiResponse.success('Project created successfully', project));
@@ -87,6 +88,39 @@ export const getAllProjects = async (req: Request, res: Response, next: NextFunc
         return res
             .status(200)
             .json(ApiResponse.successWithPagination("Projects fetched successfully", projects, metadata));
+    } catch (error: any) {
+        next(error);
+    }
+};
+
+/**
+ * Get all open projects (opened: true)
+ */
+export const getAllOpenProjects = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { page, limit } = req.query;
+
+        const { offset, limit: l } = getPagination(page, limit);
+
+        const { count, rows: projects } = await Project.findAndCountAll({
+            where: { opened: true },
+            include: [
+                {
+                    model: User,
+                    as: "user",
+                    attributes: ["id", "email"],
+                },
+            ],
+            order: [["createdAt", "DESC"]],
+            limit: l,
+            offset: offset,
+        });
+
+        const metadata = getPagingData(count, page, l);
+
+        return res
+            .status(200)
+            .json(ApiResponse.successWithPagination("Open projects fetched successfully", projects, metadata));
     } catch (error: any) {
         next(error);
     }
@@ -205,7 +239,8 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
             skills: req.body.skills ? parseInputArray(req.body.skills) : project.skills,
             addInFeuturedWork: req.body.addInFeuturedWork !== undefined ? (req.body.addInFeuturedWork === 'true' || req.body.addInFeuturedWork === true) : project.addInFeuturedWork,
             link: req.body.link || project.link,
-            seekings: req.body.seekings ? parseInputArray(req.body.seekings) : project.seekings
+            seekings: req.body.seekings ? parseInputArray(req.body.seekings) : project.seekings,
+            opened: req.body.opened !== undefined ? (req.body.opened === 'true' || req.body.opened === true) : project.opened
         });
 
         return res.status(200).json(ApiResponse.success('Project updated successfully', project));
