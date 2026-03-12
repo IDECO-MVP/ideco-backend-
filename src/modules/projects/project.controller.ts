@@ -6,6 +6,7 @@ import { uploadToCloudinary } from '../../utils/cloudinary';
 import { parseInputArray } from '../../utils/parser';
 import { getPagination, getPagingData } from '../../utils/pagination';
 import { Op } from 'sequelize';
+import { FeaturedWork } from '../featuredWorks/featuredWork.model';
 
 /**
  * Create a new project
@@ -36,6 +37,22 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
             seekings: parseInputArray(seekings),
             opened: opened !== undefined ? (opened === 'true' || opened === true) : true
         });
+
+        // Sync with FeaturedWork if addInFeuturedWork is true
+        if (project.addInFeuturedWork) {
+            await FeaturedWork.create({
+                image: project.image,
+                title: project.title,
+                status: project.status,
+                description: project.description,
+                skills: project.skills,
+                userId: project.userId,
+                projectId: project.id,
+                link: project.link,
+                seekings: project.seekings,
+                opened: project.opened
+            });
+        }
 
         return res.status(201).json(ApiResponse.success('Project created successfully', project));
     } catch (error: any) {
@@ -243,6 +260,41 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
             opened: req.body.opened !== undefined ? (req.body.opened === 'true' || req.body.opened === true) : project.opened
         });
 
+        // Sync with FeaturedWork
+        if (project.addInFeuturedWork) {
+            const [featuredWork, created] = await FeaturedWork.findOrCreate({
+                where: { projectId: project.id },
+                defaults: {
+                    image: project.image,
+                    title: project.title,
+                    status: project.status,
+                    description: project.description,
+                    skills: project.skills,
+                    userId: project.userId,
+                    projectId: project.id,
+                    link: project.link,
+                    seekings: project.seekings,
+                    opened: project.opened
+                }
+            });
+
+            if (!created) {
+                await featuredWork.update({
+                    image: project.image,
+                    title: project.title,
+                    status: project.status,
+                    description: project.description,
+                    skills: project.skills,
+                    link: project.link,
+                    seekings: project.seekings,
+                    opened: project.opened
+                });
+            }
+        } else {
+            // If addInFeuturedWork is false, remove from FeaturedWork if it was there
+            await FeaturedWork.destroy({ where: { projectId: project.id } });
+        }
+
         return res.status(200).json(ApiResponse.success('Project updated successfully', project));
     } catch (error: any) {
         next(error);
@@ -261,6 +313,9 @@ export const deleteProject = async (req: Request, res: Response, next: NextFunct
         if (!project) {
             return res.status(404).json(ApiResponse.error('Project not found or unauthorized'));
         }
+
+        // Delete associated FeaturedWork
+        await FeaturedWork.destroy({ where: { projectId: project.id } });
 
         await project.destroy();
         return res.status(200).json(ApiResponse.success('Project deleted successfully', {}));

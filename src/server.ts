@@ -7,6 +7,8 @@ import './modules/posts/post.model';
 import './modules/projects/project.model';
 import './modules/collaborations/collaboration.model';
 import './modules/userSkillLevels/userSkillLevel.model';
+import './modules/tasks/task.model';
+import './modules/featuredWorks/featuredWork.model';
 
 const PORT = process.env.PORT || 5000;
 

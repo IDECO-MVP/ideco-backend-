@@ -8,6 +8,8 @@ import collaborationRoute from './modules/collaborations/collaboration.route';
 import userSkillLevelRoute from './modules/userSkillLevels/userSkillLevel.route';
 import taskRoute from './modules/tasks/task.route';
 
+import featuredWorkRoute from './modules/featuredWorks/featuredWork.route';
+
 const router = Router();
 
 // Combine all module routes here
@@ -19,5 +21,6 @@ router.use('/projects', projectRoute);
 router.use('/collaborations', collaborationRoute);
 router.use('/user-skill-levels', userSkillLevelRoute);
 router.use('/tasks', taskRoute);
+router.use('/featured-works', featuredWorkRoute);
 
 export default router;
