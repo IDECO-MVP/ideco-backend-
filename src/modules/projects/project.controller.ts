@@ -9,6 +9,7 @@ import { Op } from 'sequelize';
 import { FeaturedWork } from '../featuredWorks/featuredWork.model';
 import { Collaboration } from '../collaborations/collaboration.model';
 import { Profile } from "../profiles/profile.model";
+import { Task } from '../tasks/task.model';
 
 /**
  * Common helper to check if a user has applied to projects
@@ -142,9 +143,6 @@ export const getAllProjects = async (req: Request, res: Response, next: NextFunc
     }
 };
 
-/**
- * Get all open projects (opened: true)
- */
 export const getAllOpenProjects = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { page, limit } = req.query;
@@ -159,6 +157,15 @@ export const getAllOpenProjects = async (req: Request, res: Response, next: Next
                     as: "user",
                     attributes: ["id", "email"],
                 },
+                {
+                    model: Collaboration,
+                    as: "collaborations",
+                    attributes: ["id", "status"],
+                    where: {
+                        status: "pending",
+                    },
+                    required: false
+                }
             ],
             order: [["createdAt", "DESC"]],
             limit: l,
@@ -169,9 +176,19 @@ export const getAllOpenProjects = async (req: Request, res: Response, next: Next
 
         const projectsWithApplied = await checkAppliedStatus((req as any).user?.id, projects);
 
-        return res
-            .status(200)
-            .json(ApiResponse.successWithPagination("Open projects fetched successfully", projectsWithApplied, metadata));
+        const finalProjects = projectsWithApplied.map((project: any) => ({
+    ...project,
+    applicantsCount: project.collaborations?.length || 0
+}));
+
+        return res.status(200).json(
+            ApiResponse.successWithPagination(
+                "Open projects fetched successfully",
+                finalProjects,
+                metadata
+            )
+        );
+
     } catch (error: any) {
         next(error);
     }
@@ -386,15 +403,29 @@ export const getProjectDetails = async (
   try {
     const { projectId } = req.params;
 
-    const project : any = await Project.findOne({
+    const project: any = await Project.findOne({
       where: { id: projectId },
-      include: [
-        {
-          model: User,
-          as: "user",
-          attributes: ["id", "email"],
-        },
-      ],
+    //   include: [
+    //     {
+    //       model: User,
+    //       as: "user",
+    //       attributes: ["id", "email"],
+    //     },
+    //   ],
+    include: [
+  {
+    model: User,
+    as: "user",
+    attributes: ["id"],
+    include: [
+      {
+        model: Profile,
+        as: "profile",
+        attributes: ["fullName"]
+      }
+    ]
+  },
+]
     });
 
     if (!project) {
@@ -404,12 +435,30 @@ export const getProjectDetails = async (
       });
     }
 
+    // Team members count
     const teamMembers = await Collaboration.count({
       where: {
         projectId,
         status: "approved",
       },
     });
+
+    // Total tasks
+    const totalTasks = await Task.count({
+      where: { projectId },
+    });
+
+    // Completed tasks
+    const completedTasks = await Task.count({
+      where: {
+        projectId,
+        status: "completed",
+      },
+    });
+
+    // Progress %
+    const progress =
+      totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
     return res.status(200).json({
       success: true,
@@ -424,13 +473,16 @@ export const getProjectDetails = async (
         opened: project.opened,
         leader: project.user,
         teamMembers,
+
+        // NEW FIELDS
+        tasksCompleted: `${completedTasks}/${totalTasks}`,
+        progressPercent: progress,
       },
     });
   } catch (error) {
     next(error);
   }
 };
-
 
 export const getProjectTeam = async (
   req: Request,

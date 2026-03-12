@@ -10,6 +10,7 @@ export class Profile extends Model {
     public bio!: string | null;
     public location!: string | null;
     public website!: string | null;
+    public availability!: string | null;
     public avatar!: string | null;
     public coverImage!: string | null;
     public languages!: string[] | null;
@@ -54,6 +55,10 @@ Profile.init(
             allowNull: true,
         },
         website: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        availability: {
             type: DataTypes.STRING,
             allowNull: true,
         },
