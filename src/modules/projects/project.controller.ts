@@ -8,6 +8,7 @@ import { getPagination, getPagingData } from '../../utils/pagination';
 import { Op } from 'sequelize';
 import { FeaturedWork } from '../featuredWorks/featuredWork.model';
 import { Collaboration } from '../collaborations/collaboration.model';
+import { Profile } from "../profiles/profile.model";
 
 /**
  * Common helper to check if a user has applied to projects
@@ -377,3 +378,93 @@ export const deleteProject = async (req: Request, res: Response, next: NextFunct
     }
 };
 
+export const getProjectDetails = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { projectId } = req.params;
+
+    const project : any = await Project.findOne({
+      where: { id: projectId },
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "email"],
+        },
+      ],
+    });
+
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        message: "Project not found",
+      });
+    }
+
+    const teamMembers = await Collaboration.count({
+      where: {
+        projectId,
+        status: "approved",
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        id: project.id,
+        image: project.image,
+        title: project.title,
+        description: project.description,
+        status: project.status,
+        skills: project.skills,
+        seekings: project.seekings,
+        opened: project.opened,
+        leader: project.user,
+        teamMembers,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+export const getProjectTeam = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { projectId } = req.params;
+
+    const collaborators = await Collaboration.findAll({
+      where: {
+        projectId,
+        status: "approved",
+      },
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "email"],
+          include: [
+            {
+              model: Profile,
+              as: "profile",
+            },
+          ],
+        },
+      ],
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: collaborators,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

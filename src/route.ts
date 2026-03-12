@@ -9,6 +9,7 @@ import userSkillLevelRoute from './modules/userSkillLevels/userSkillLevel.route'
 import taskRoute from './modules/tasks/task.route';
 
 import featuredWorkRoute from './modules/featuredWorks/featuredWork.route';
+import discussionRoute from './modules/discussions/discussion.route';
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use('/collaborations', collaborationRoute);
 router.use('/user-skill-levels', userSkillLevelRoute);
 router.use('/tasks', taskRoute);
 router.use('/featured-works', featuredWorkRoute);
+router.use('/discussions', discussionRoute);
 
 export default router;

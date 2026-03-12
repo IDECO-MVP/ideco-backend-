@@ -11,7 +11,9 @@ import {
     updateProject,
     deleteProject,
     getMyProjects,
-    getFeaturedProjectsByUserId
+    getFeaturedProjectsByUserId,
+    getProjectDetails,
+    getProjectTeam
 } from './project.controller';
 
 const router = Router();
@@ -20,6 +22,8 @@ const router = Router();
 router.get('/', optionalAuthMiddleware, getAllProjects);
 router.get('/open', optionalAuthMiddleware, getAllOpenProjects);
 router.get('/get/:id', optionalAuthMiddleware, getProjectById);
+router.get('/details/:projectId', optionalAuthMiddleware, getProjectDetails);
+router.get('/team/:projectId', optionalAuthMiddleware, getProjectTeam);
 router.get('/user/:userId', optionalAuthMiddleware, getProjectsByUserId);
 router.get('/featured/:userId', optionalAuthMiddleware, getFeaturedProjectsByUserId); // Get featured projects by user ID
 router.get('/me', authMiddleware, getMyProjects); // Get projects of the authenticated user
