@@ -19,7 +19,7 @@ const startServer = async () => {
 
         // Sync models (creates tables if they don't exist)
         // In production, you might want to use migrations instead
-        await sequelize.sync({ alter: false }); // Use alter: true cautiously in dev, false or migrations in prod
+        await sequelize.sync({ alter: true }); // Use alter: true cautiously in dev, false or migrations in prod
         console.log('Database synced successfully');
 
         app.listen(PORT, () => {

@@ -8,6 +8,7 @@ export class Collaboration extends Model {
     public projectId!: number;
     public userId!: number;
     public status!: 'pending' | 'approved' | 'rejected';
+    public isRead!: boolean;
 
     // Virtual field for association
     public project!: Project;
@@ -45,6 +46,11 @@ Collaboration.init(
             type: DataTypes.ENUM('pending', 'approved', 'rejected'),
             allowNull: false,
             defaultValue: 'pending',
+        },
+        isRead: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false,
         },
     },
     {

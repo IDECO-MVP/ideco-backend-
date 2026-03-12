@@ -185,3 +185,33 @@ export const getMyCollaborations = async (req: Request, res: Response, next: Nex
         next(error);
     }
 };
+/**
+ * Mark collaboration request as read
+ */
+export const markAsRead = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = (req as any).user.id;
+        const { collaborationId } = req.params;
+
+        const collaboration = await Collaboration.findByPk(Number(collaborationId), {
+            include: [{ model: Project, as: 'project' }]
+        });
+
+        if (!collaboration) {
+            return res.status(404).json(ApiResponse.error('Collaboration request not found'));
+        }
+
+        // Check if current user is the owner of the project
+        if (collaboration.project.userId !== userId) {
+            return res.status(403).json(ApiResponse.error('Unauthorized to mark this request as read'));
+        }
+
+        if (collaboration.isRead === false) {
+            await collaboration.update({ isRead: true });
+        }
+
+        return res.status(200).json(ApiResponse.success('Collaboration request marked as read', collaboration));
+    } catch (error: any) {
+        next(error);
+    }
+};

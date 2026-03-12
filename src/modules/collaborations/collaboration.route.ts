@@ -6,7 +6,8 @@ import {
     getAllMyProjectRequests,
     updateCollaborationStatus,
     getProjectCollaborators,
-    getMyCollaborations
+    getMyCollaborations,
+    markAsRead
 } from './collaboration.controller';
 
 const router = Router();
@@ -16,6 +17,7 @@ router.post('/apply', authMiddleware, applyToProject);
 router.get('/requests/:projectId', authMiddleware, getCollaborationRequests);
 router.get('/all-project-requests', authMiddleware, getAllMyProjectRequests);
 router.patch('/status/:collaborationId', authMiddleware, updateCollaborationStatus);
+router.patch('/mark-as-read/:collaborationId', authMiddleware, markAsRead);
 router.get('/me', authMiddleware, getMyCollaborations);
 
 // Public or semi-public route
