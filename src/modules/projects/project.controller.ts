@@ -7,6 +7,35 @@ import { parseInputArray } from '../../utils/parser';
 import { getPagination, getPagingData } from '../../utils/pagination';
 import { Op } from 'sequelize';
 import { FeaturedWork } from '../featuredWorks/featuredWork.model';
+import { Collaboration } from '../collaborations/collaboration.model';
+
+/**
+ * Common helper to check if a user has applied to projects
+ */
+const checkAppliedStatus = async (userId: number | undefined, projects: Project[]) => {
+    if (!userId || projects.length === 0) {
+        return projects.map(p => ({
+            ...p.toJSON(),
+            applied: false
+        }));
+    }
+
+    const projectIds = projects.map(p => p.id);
+    const collaborations = await Collaboration.findAll({
+        where: {
+            userId: userId,
+            projectId: projectIds
+        },
+        attributes: ['projectId']
+    });
+
+    const appliedProjectIds = new Set(collaborations.map(c => c.projectId));
+
+    return projects.map(p => ({
+        ...p.toJSON(),
+        applied: appliedProjectIds.has(p.id)
+    }));
+};
 
 /**
  * Create a new project
@@ -102,9 +131,11 @@ export const getAllProjects = async (req: Request, res: Response, next: NextFunc
 
         const metadata = getPagingData(count, page, l);
 
+        const projectsWithApplied = await checkAppliedStatus((req as any).user?.id, projects);
+
         return res
             .status(200)
-            .json(ApiResponse.successWithPagination("Projects fetched successfully", projects, metadata));
+            .json(ApiResponse.successWithPagination("Projects fetched successfully", projectsWithApplied, metadata));
     } catch (error: any) {
         next(error);
     }
@@ -135,9 +166,11 @@ export const getAllOpenProjects = async (req: Request, res: Response, next: Next
 
         const metadata = getPagingData(count, page, l);
 
+        const projectsWithApplied = await checkAppliedStatus((req as any).user?.id, projects);
+
         return res
             .status(200)
-            .json(ApiResponse.successWithPagination("Open projects fetched successfully", projects, metadata));
+            .json(ApiResponse.successWithPagination("Open projects fetched successfully", projectsWithApplied, metadata));
     } catch (error: any) {
         next(error);
     }
@@ -155,7 +188,19 @@ export const getProjectById = async (req: Request, res: Response, next: NextFunc
         if (!project) {
             return res.status(404).json(ApiResponse.error('Project not found'));
         }
-        return res.status(200).json(ApiResponse.success('Project fetched successfully', project));
+
+        const projectData = project.toJSON();
+        const userId = (req as any).user?.id;
+        let applied = false;
+
+        if (userId) {
+            const collaboration = await Collaboration.findOne({
+                where: { userId, projectId: project.id }
+            });
+            applied = !!collaboration;
+        }
+
+        return res.status(200).json(ApiResponse.success('Project fetched successfully', { ...projectData, applied }));
     } catch (error: any) {
         next(error);
     }
@@ -171,7 +216,10 @@ export const getProjectsByUserId = async (req: Request, res: Response, next: Nex
             where: { userId: Number(userId) },
             order: [['createdAt', 'DESC']]
         });
-        return res.status(200).json(ApiResponse.success('User projects fetched successfully', projects));
+
+        const projectsWithApplied = await checkAppliedStatus((req as any).user?.id, projects);
+
+        return res.status(200).json(ApiResponse.success('User projects fetched successfully', projectsWithApplied));
     } catch (error: any) {
         next(error);
     }
@@ -190,7 +238,10 @@ export const getFeaturedProjectsByUserId = async (req: Request, res: Response, n
             },
             order: [['createdAt', 'DESC']]
         });
-        return res.status(200).json(ApiResponse.success('User featured projects fetched successfully', projects));
+
+        const projectsWithApplied = await checkAppliedStatus((req as any).user?.id, projects);
+
+        return res.status(200).json(ApiResponse.success('User featured projects fetched successfully', projectsWithApplied));
     } catch (error: any) {
         next(error);
     }
@@ -221,7 +272,9 @@ export const getMyProjects = async (req: Request, res: Response, next: NextFunct
 
         const metadata = getPagingData(count, page, l);
 
-        return res.status(200).json(ApiResponse.successWithPagination('My projects fetched successfully', projects, metadata));
+        const projectsWithApplied = await checkAppliedStatus(userId, projects);
+
+        return res.status(200).json(ApiResponse.successWithPagination('My projects fetched successfully', projectsWithApplied, metadata));
     } catch (error: any) {
         next(error);
     }
