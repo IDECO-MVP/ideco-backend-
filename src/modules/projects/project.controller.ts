@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { Project } from './project.model';
 import { ApiResponse } from '../../utils/response';
 import { User } from '../users/user.model';
-import { uploadToCloudinary } from '../../utils/cloudinary';
+import { uploadToS3 } from '../../utils/s3';
 import { parseInputArray } from '../../utils/parser';
 import { getPagination, getPagingData } from '../../utils/pagination';
 import { Op } from 'sequelize';
@@ -47,7 +47,7 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
         let imageUrl = req.body.image;
 
         if (req.file) {
-            imageUrl = await uploadToCloudinary(req.file.buffer, 'projects');
+            imageUrl = await uploadToS3(req.file.buffer, 'projects', req.file.originalname, req.file.mimetype);
         }
 
         if (link && !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(link)) {
@@ -294,7 +294,7 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
 
         let imageUrl = req.body.image || project.image;
         if (req.file) {
-            imageUrl = await uploadToCloudinary(req.file.buffer, 'projects');
+            imageUrl = await uploadToS3(req.file.buffer, 'projects', req.file.originalname, req.file.mimetype);
         }
 
         if (req.body.link && !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(req.body.link)) {

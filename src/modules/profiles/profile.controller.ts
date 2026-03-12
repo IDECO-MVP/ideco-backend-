@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { Profile } from './profile.model';
 import { ApiResponse } from '../../utils/response';
-import { uploadToCloudinary } from '../../utils/cloudinary';
+import { uploadToS3 } from '../../utils/s3';
 import { parseInputArray } from '../../utils/parser';
 import { getUserFullData } from '../users/user.service';
 
@@ -38,18 +38,18 @@ export const getProfileByUserId = async (req: Request, res: Response, next: Next
 };
 
 /**
- * Helper to handle file uploads to Cloudinary
+ * Helper to handle file uploads to AWS S3
  */
 const handleFileUploads = async (req: Request) => {
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
     const uploadData: any = {};
 
     if (files?.avatar?.[0]) {
-        uploadData.avatar = await uploadToCloudinary(files.avatar[0].buffer, 'avatars');
+        uploadData.avatar = await uploadToS3(files.avatar[0].buffer, 'avatars', files.avatar[0].originalname, files.avatar[0].mimetype);
     }
 
     if (files?.coverImage?.[0]) {
-        uploadData.coverImage = await uploadToCloudinary(files.coverImage[0].buffer, 'covers');
+        uploadData.coverImage = await uploadToS3(files.coverImage[0].buffer, 'covers', files.coverImage[0].originalname, files.coverImage[0].mimetype);
     }
 
     return uploadData;

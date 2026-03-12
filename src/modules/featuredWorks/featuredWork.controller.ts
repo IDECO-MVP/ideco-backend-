@@ -3,7 +3,7 @@ import { FeaturedWork } from './featuredWork.model';
 import { ApiResponse } from '../../utils/response';
 import { User } from '../users/user.model';
 import { Project } from '../projects/project.model';
-import { uploadToCloudinary } from '../../utils/cloudinary';
+import { uploadToS3 } from '../../utils/s3';
 import { parseInputArray } from '../../utils/parser';
 import { getPagination, getPagingData } from '../../utils/pagination';
 
@@ -39,7 +39,7 @@ export const createFeaturedWork = async (req: Request, res: Response, next: Next
         let imageUrl = req.body.image;
 
         if (req.file) {
-            imageUrl = await uploadToCloudinary(req.file.buffer, 'featured-works');
+            imageUrl = await uploadToS3(req.file.buffer, 'featured-works', req.file.originalname, req.file.mimetype);
         }
 
         if (link && !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(link)) {
@@ -131,7 +131,7 @@ export const updateFeaturedWork = async (req: Request, res: Response, next: Next
 
         let imageUrl = req.body.image || featuredWork.image;
         if (req.file) {
-            imageUrl = await uploadToCloudinary(req.file.buffer, 'featured-works');
+            imageUrl = await uploadToS3(req.file.buffer, 'featured-works', req.file.originalname, req.file.mimetype);
         }
 
         if (req.body.link && !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/.test(req.body.link)) {

@@ -3,7 +3,7 @@ import { Post } from './post.model';
 import { ApiResponse } from '../../utils/response';
 import { User } from '../users/user.model';
 import { Profile } from '../profiles/profile.model';
-import { uploadToCloudinary } from '../../utils/cloudinary';
+import { uploadToS3 } from '../../utils/s3';
 import { parseInputArray } from '../../utils/parser';
 
 /**
@@ -16,7 +16,7 @@ export const createPost = async (req: Request, res: Response, next: NextFunction
         let imageUrl = req.body.image;
 
         if (req.file) {
-            imageUrl = await uploadToCloudinary(req.file.buffer, 'posts');
+            imageUrl = await uploadToS3(req.file.buffer, 'posts', req.file.originalname, req.file.mimetype);
         }
 
         const post = await Post.create({
@@ -131,7 +131,7 @@ export const updatePost = async (req: Request, res: Response, next: NextFunction
 
         let imageUrl = req.body.image || post.image;
         if (req.file) {
-            imageUrl = await uploadToCloudinary(req.file.buffer, 'posts');
+            imageUrl = await uploadToS3(req.file.buffer, 'posts', req.file.originalname, req.file.mimetype);
         }
 
         await post.update({
