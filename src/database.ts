@@ -13,6 +13,12 @@ if (!databaseUrl) {
 const sequelize = new Sequelize(databaseUrl, {
     dialect: 'postgres',
     logging: false,
+    dialectOptions: {
+        ssl: {
+            require: true,
+            rejectUnauthorized: false // Setting to false for easier connection to RDS, can be true if you provide the CA certificate
+        }
+    },
     define: {
         timestamps: true,
         underscored: false,
