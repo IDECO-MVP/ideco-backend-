@@ -45,7 +45,7 @@ const checkAppliedStatus = async (userId: number | undefined, projects: Project[
 export const createProject = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
-        const { title, status, description, addInFeuturedWork, link, seekings, opened } = req.body;
+        const { title, status, description, addInFeuturedWork, link, seekings, opened, communityId, category } = req.body;
         let imageUrl = req.body.image;
 
         if (req.file) {
@@ -66,7 +66,9 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
             addInFeuturedWork: addInFeuturedWork === 'true' || addInFeuturedWork === true,
             link,
             seekings: parseInputArray(seekings),
-            opened: opened !== undefined ? (opened === 'true' || opened === true) : true
+            opened: opened !== undefined ? (opened === 'true' || opened === true) : true,
+            communityId: communityId ? Number(communityId) : undefined,
+            category
         });
 
         // Sync with FeaturedWork if addInFeuturedWork is true
@@ -177,9 +179,9 @@ export const getAllOpenProjects = async (req: Request, res: Response, next: Next
         const projectsWithApplied = await checkAppliedStatus((req as any).user?.id, projects);
 
         const finalProjects = projectsWithApplied.map((project: any) => ({
-    ...project,
-    applicantsCount: project.collaborations?.length || 0
-}));
+            ...project,
+            applicantsCount: project.collaborations?.length || 0
+        }));
 
         return res.status(200).json(
             ApiResponse.successWithPagination(
@@ -328,7 +330,9 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
             addInFeuturedWork: req.body.addInFeuturedWork !== undefined ? (req.body.addInFeuturedWork === 'true' || req.body.addInFeuturedWork === true) : project.addInFeuturedWork,
             link: req.body.link || project.link,
             seekings: req.body.seekings ? parseInputArray(req.body.seekings) : project.seekings,
-            opened: req.body.opened !== undefined ? (req.body.opened === 'true' || req.body.opened === true) : project.opened
+            opened: req.body.opened !== undefined ? (req.body.opened === 'true' || req.body.opened === true) : project.opened,
+            communityId: req.body.communityId ? Number(req.body.communityId) : project.communityId,
+            category: req.body.category || project.category
         });
 
         // Sync with FeaturedWork
@@ -396,127 +400,127 @@ export const deleteProject = async (req: Request, res: Response, next: NextFunct
 };
 
 export const getProjectDetails = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
+    req: Request,
+    res: Response,
+    next: NextFunction
 ) => {
-  try {
-    const { projectId } = req.params;
+    try {
+        const { projectId } = req.params;
 
-    const project: any = await Project.findOne({
-      where: { id: projectId },
-    //   include: [
-    //     {
-    //       model: User,
-    //       as: "user",
-    //       attributes: ["id", "email"],
-    //     },
-    //   ],
-    include: [
-  {
-    model: User,
-    as: "user",
-    attributes: ["id"],
-    include: [
-      {
-        model: Profile,
-        as: "profile",
-        attributes: ["fullName"]
-      }
-    ]
-  },
-]
-    });
+        const project: any = await Project.findOne({
+            where: { id: projectId },
+            //   include: [
+            //     {
+            //       model: User,
+            //       as: "user",
+            //       attributes: ["id", "email"],
+            //     },
+            //   ],
+            include: [
+                {
+                    model: User,
+                    as: "user",
+                    attributes: ["id"],
+                    include: [
+                        {
+                            model: Profile,
+                            as: "profile",
+                            attributes: ["fullName"]
+                        }
+                    ]
+                },
+            ]
+        });
 
-    if (!project) {
-      return res.status(404).json({
-        success: false,
-        message: "Project not found",
-      });
+        if (!project) {
+            return res.status(404).json({
+                success: false,
+                message: "Project not found",
+            });
+        }
+
+        // Team members count
+        const teamMembers = await Collaboration.count({
+            where: {
+                projectId,
+                status: "approved",
+            },
+        });
+
+        // Total tasks
+        const totalTasks = await Task.count({
+            where: { projectId },
+        });
+
+        // Completed tasks
+        const completedTasks = await Task.count({
+            where: {
+                projectId,
+                status: "completed",
+            },
+        });
+
+        // Progress %
+        const progress =
+            totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                id: project.id,
+                image: project.image,
+                title: project.title,
+                description: project.description,
+                status: project.status,
+                skills: project.skills,
+                seekings: project.seekings,
+                opened: project.opened,
+                leader: project.user,
+                teamMembers,
+
+                // NEW FIELDS
+                tasksCompleted: `${completedTasks}/${totalTasks}`,
+                progressPercent: progress,
+            },
+        });
+    } catch (error) {
+        next(error);
     }
-
-    // Team members count
-    const teamMembers = await Collaboration.count({
-      where: {
-        projectId,
-        status: "approved",
-      },
-    });
-
-    // Total tasks
-    const totalTasks = await Task.count({
-      where: { projectId },
-    });
-
-    // Completed tasks
-    const completedTasks = await Task.count({
-      where: {
-        projectId,
-        status: "completed",
-      },
-    });
-
-    // Progress %
-    const progress =
-      totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-
-    return res.status(200).json({
-      success: true,
-      data: {
-        id: project.id,
-        image: project.image,
-        title: project.title,
-        description: project.description,
-        status: project.status,
-        skills: project.skills,
-        seekings: project.seekings,
-        opened: project.opened,
-        leader: project.user,
-        teamMembers,
-
-        // NEW FIELDS
-        tasksCompleted: `${completedTasks}/${totalTasks}`,
-        progressPercent: progress,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
 };
 
 export const getProjectTeam = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
+    req: Request,
+    res: Response,
+    next: NextFunction
 ) => {
-  try {
-    const { projectId } = req.params;
+    try {
+        const { projectId } = req.params;
 
-    const collaborators = await Collaboration.findAll({
-      where: {
-        projectId,
-        status: "approved",
-      },
-      include: [
-        {
-          model: User,
-          as: "user",
-          attributes: ["id", "email"],
-          include: [
-            {
-              model: Profile,
-              as: "profile",
+        const collaborators = await Collaboration.findAll({
+            where: {
+                projectId,
+                status: "approved",
             },
-          ],
-        },
-      ],
-    });
+            include: [
+                {
+                    model: User,
+                    as: "user",
+                    attributes: ["id", "email"],
+                    include: [
+                        {
+                            model: Profile,
+                            as: "profile",
+                        },
+                    ],
+                },
+            ],
+        });
 
-    return res.status(200).json({
-      success: true,
-      data: collaborators,
-    });
-  } catch (error) {
-    next(error);
-  }
+        return res.status(200).json({
+            success: true,
+            data: collaborators,
+        });
+    } catch (error) {
+        next(error);
+    }
 };

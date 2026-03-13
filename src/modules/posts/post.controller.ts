@@ -15,18 +15,29 @@ import { PostComment } from './postComment.model';
 export const createPost = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
-        const { caption, milestoneBadge } = req.body;
+        const { caption, milestoneBadge, communityId } = req.body;
         let imageUrl = req.body.image;
+        let videoUrl = req.body.video;
 
-        if (req.file) {
-            imageUrl = await uploadToS3(req.file.buffer, 'posts', req.file.originalname, req.file.mimetype);
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+        if (files) {
+            if (files['image'] && files['image'][0]) {
+                const file = files['image'][0];
+                imageUrl = await uploadToS3(file.buffer, 'posts/images', file.originalname, file.mimetype);
+            }
+            if (files['video'] && files['video'][0]) {
+                const file = files['video'][0];
+                videoUrl = await uploadToS3(file.buffer, 'posts/videos', file.originalname, file.mimetype);
+            }
         }
 
         const post = await Post.create({
             image: imageUrl,
+            video: videoUrl,
             caption,
             hashtags: parseInputArray(req.body.hashtags),
             milestoneBadge,
+            communityId: communityId ? Number(communityId) : undefined,
             userId
         });
 
@@ -180,15 +191,27 @@ export const updatePost = async (req: Request, res: Response, next: NextFunction
         }
 
         let imageUrl = req.body.image || post.image;
-        if (req.file) {
-            imageUrl = await uploadToS3(req.file.buffer, 'posts', req.file.originalname, req.file.mimetype);
+        let videoUrl = req.body.video || post.video;
+
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+        if (files) {
+            if (files['image'] && files['image'][0]) {
+                const file = files['image'][0];
+                imageUrl = await uploadToS3(file.buffer, 'posts/images', file.originalname, file.mimetype);
+            }
+            if (files['video'] && files['video'][0]) {
+                const file = files['video'][0];
+                videoUrl = await uploadToS3(file.buffer, 'posts/videos', file.originalname, file.mimetype);
+            }
         }
 
         await post.update({
             image: imageUrl,
+            video: videoUrl,
             caption: req.body.caption || post.caption,
             hashtags: req.body.hashtags ? parseInputArray(req.body.hashtags) : post.hashtags,
-            milestoneBadge: req.body.milestoneBadge || post.milestoneBadge
+            milestoneBadge: req.body.milestoneBadge || post.milestoneBadge,
+            communityId: req.body.communityId ? Number(req.body.communityId) : post.communityId
         });
 
         return res.status(200).json(ApiResponse.success('Post updated successfully', post));
@@ -372,7 +395,7 @@ export const getMySavedPosts = async (req: Request, res: Response, next: NextFun
             order: [['createdAt', 'DESC']],
             include: [{
                 model: Post,
-                as: 'post', 
+                as: 'post',
             }]
         });
 

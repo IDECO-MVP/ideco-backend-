@@ -12,6 +12,9 @@ import './modules/collaborations/collaboration.model';
 import './modules/userSkillLevels/userSkillLevel.model';
 import './modules/tasks/task.model';
 import './modules/featuredWorks/featuredWork.model';
+import './modules/community/community.model';
+import './modules/community/communityMember.model';
+
 
 const PORT = process.env.PORT || 5000;
 

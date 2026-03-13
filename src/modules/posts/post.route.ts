@@ -29,8 +29,8 @@ router.get('/saved/my', authMiddleware, getMySavedPosts);
 
 // Protected routes
 router.get('/me', authMiddleware, getMyPosts); // Get posts of the authenticated user
-router.post('/', authMiddleware, upload.single('image'), createPost);
-router.put('/:id', authMiddleware, upload.single('image'), updatePost);
+router.post('/', authMiddleware, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'video', maxCount: 1 }]), createPost);
+router.put('/:id', authMiddleware, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'video', maxCount: 1 }]), updatePost);
 router.delete('/:id', authMiddleware, deletePost);
 
 // Post Interactions (Protected)

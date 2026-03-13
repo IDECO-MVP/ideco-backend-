@@ -15,6 +15,9 @@ export class Project extends Model {
     public seekings!: string[];
     public opened!: boolean;
 
+    public communityId!: number;
+    public category!: string;
+
     // timestamps
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -39,6 +42,15 @@ Project.init(
             type: DataTypes.ENUM("completed", "inProgress", "ongoing"),
             allowNull: false,
             defaultValue: "ongoing",
+        },
+        communityId: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            defaultValue: null,
+        },
+        category: {
+            type: DataTypes.STRING,
+            allowNull: true,
         },
         description: {
             type: DataTypes.TEXT,
