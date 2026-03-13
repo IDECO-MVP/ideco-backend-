@@ -8,6 +8,7 @@ import './modules/posts/postLike.model';
 import './modules/posts/postSave.model';
 import './modules/posts/postComment.model';
 import './modules/projects/project.model';
+import './modules/projects/milestone.model';
 import './modules/collaborations/collaboration.model';
 import './modules/userSkillLevels/userSkillLevel.model';
 import './modules/tasks/task.model';

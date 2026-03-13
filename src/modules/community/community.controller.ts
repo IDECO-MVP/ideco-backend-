@@ -6,6 +6,8 @@ import { User } from '../users/user.model';
 import { Profile } from '../profiles/profile.model';
 import { Post } from '../posts/post.model';
 import { Project } from '../projects/project.model';
+import { Task } from '../tasks/task.model';
+import { Collaboration } from '../collaborations/collaboration.model';
 import { uploadToS3 } from '../../utils/s3';
 import { parseInputArray } from '../../utils/parser';
 
@@ -348,7 +350,29 @@ export const getProjectsByCommunityId = async (req: Request, res: Response) => {
             include: [includeUser('user')],
         });
 
-        const formatted = projects.map((p: any) => formatUserData(p, 'user'));
+        // Attach progress data to each project (same as getProjectDetails)
+        const formatted = await Promise.all(
+            projects.map(async (project: any) => {
+                const base = formatUserData(project, 'user');
+
+                const [totalTasks, completedTasks, teamMembers] = await Promise.all([
+                    Task.count({ where: { projectId: project.id } }),
+                    Task.count({ where: { projectId: project.id, status: 'completed' } }),
+                    Collaboration.count({ where: { projectId: project.id, status: 'approved' } }),
+                ]);
+
+                const progressPercent = totalTasks > 0
+                    ? Math.round((completedTasks / totalTasks) * 100)
+                    : 0;
+
+                return {
+                    ...base,
+                    teamMembers,
+                    tasksCompleted: `${completedTasks}/${totalTasks}`,
+                    progressPercent,
+                };
+            })
+        );
 
         return res.status(200).json(ApiResponse.success('Projects fetched successfully', formatted));
     } catch (error: any) {
