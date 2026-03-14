@@ -72,7 +72,7 @@ export const getAllPosts = async (req: Request, res: Response, next: NextFunctio
             ],
             order: [['createdAt', 'DESC']],
             // not fetching isOnlyForCommunity : true
-         where: {    isOnlyForCommunity: null }
+         where: {    communityId: null }
         });
         const postsResponse = posts.map((post) => {
             const postJson = post.toJSON() as any;
