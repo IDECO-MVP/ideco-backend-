@@ -15,7 +15,8 @@ import {
     addComment,
     getPostComments,
     deleteComment,
-    getMySavedPosts
+    getMySavedPosts,
+    getPostCategories
 } from './post.controller';
 
 const router = Router();
@@ -26,6 +27,7 @@ router.get('/get/:id', optionalAuthMiddleware, getPostById);
 router.get('/user/:userId', optionalAuthMiddleware, getPostsByUserId);
 router.get('/comments/:id', getPostComments);
 router.get('/saved/my', authMiddleware, getMySavedPosts);
+router.get('/categories', getPostCategories);
 
 // Protected routes
 router.get('/me', authMiddleware, getMyPosts); // Get posts of the authenticated user

@@ -16,7 +16,7 @@ import { Op } from 'sequelize';
 export const createPost = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user.id;
-        const { caption, milestoneBadge, communityId } = req.body;
+        const { caption, milestoneBadge, communityId , category, subCategory } = req.body;
         let imageUrl = req.body.image;
         let videoUrl = req.body.video;
 
@@ -39,7 +39,9 @@ export const createPost = async (req: Request, res: Response, next: NextFunction
             hashtags: parseInputArray(req.body.hashtags),
             milestoneBadge,
             communityId: communityId ? Number(communityId) : undefined,
-            userId
+            userId,
+            category,
+            subCategory,
         });
 
         return res.status(201).json(ApiResponse.success('Post created successfully', post));
@@ -54,6 +56,20 @@ export const createPost = async (req: Request, res: Response, next: NextFunction
 export const getAllPosts = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = (req as any).user?.id;
+const { category, subCategory } = req.query;
+
+const where: any = {
+    communityId: null
+};
+
+if (category) {
+    where.category = category;
+}
+
+if (subCategory) {
+    where.subCategory = subCategory;
+}
+
         const posts = await Post.findAll({
             include: [
                 {
@@ -72,7 +88,7 @@ export const getAllPosts = async (req: Request, res: Response, next: NextFunctio
             ],
             order: [['createdAt', 'DESC']],
             // not fetching isOnlyForCommunity : true
-         where: {    communityId: null }
+         where
         });
         const postsResponse = posts.map((post) => {
             const postJson = post.toJSON() as any;
@@ -432,3 +448,159 @@ export const deleteComment = async (req: Request, res: Response, next: NextFunct
     }
 };
 
+const STATIC_CATEGORIES = [
+{
+    category: "Design",
+    subCategories: [
+        "UX Design",
+        "Graphic Design",
+        "Product Design",
+        "UI Design",
+        "Motion Design"
+    ]
+},
+{
+    category: "Technology",
+    subCategories: [
+        "Web Development",
+        "Mobile Development",
+        "Machine Learning",
+        "Data Science",
+        "Cyber Security",
+        "Artificial Intelligence",
+        "Cloud Computing"
+    ]
+},
+{
+    category: "Business",
+    subCategories: [
+        "Business Analytics",
+        "Marketing",
+        "Entrepreneurship",
+        "Management",
+        "Finance",
+        "Startups"
+    ]
+},
+{
+    category: "Arts",
+    subCategories: [
+        "Contemporary Art",
+        "Digital Art",
+        "Photography",
+        "Music Production",
+        "Film Making",
+        "Illustration"
+    ]
+},
+{
+    category: "History",
+    subCategories: [
+        "Art History",
+        "Modern History",
+        "Middle Eastern History",
+        "European History",
+        "Ancient History"
+    ]
+},
+{
+    category: "Science",
+    subCategories: [
+        "Biology",
+        "Physics",
+        "Chemistry",
+        "Environmental Science",
+        "Neuroscience",
+        "Astronomy"
+    ]
+},
+{
+    category: "Writing",
+    subCategories: [
+        "Content Writing",
+        "Technical Writing",
+        "Creative Writing",
+        "Journalism",
+        "Copywriting",
+        "Blogging"
+    ]
+},
+{
+    category: "Social",
+    subCategories: [
+        "Psychology",
+        "Sociology",
+        "Anthropology",
+        "Political Science",
+        "Economics",
+        "Human Behavior"
+    ]
+}
+];
+
+export const getPostCategories = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+
+        const posts = await Post.findAll({
+            attributes: ['category', 'subCategory']
+        });
+
+        const categoryMap: any = {};
+
+        // 1️⃣ Add STATIC categories
+        STATIC_CATEGORIES.forEach(cat => {
+
+            const categoryKey = cat.category.toLowerCase();
+
+            if (!categoryMap[categoryKey]) {
+                categoryMap[categoryKey] = {
+                    category: cat.category,
+                    subCategories: new Set()
+                };
+            }
+
+            cat.subCategories.forEach(sub => {
+                categoryMap[categoryKey].subCategories.add(sub);
+            });
+        });
+
+        // 2️⃣ Merge POST categories
+        posts.forEach((post: any) => {
+
+            if (!post.category) return;
+
+            const categoryKey = post.category.toLowerCase();
+
+            if (!categoryMap[categoryKey]) {
+                categoryMap[categoryKey] = {
+                    category: post.category,
+                    subCategories: new Set()
+                };
+            }
+
+            if (post.subCategory) {
+
+                const existingSubs = Array.from(categoryMap[categoryKey].subCategories).map(
+                    (s: any) => s.toLowerCase()
+                );
+
+                if (!existingSubs.includes(post.subCategory.toLowerCase())) {
+                    categoryMap[categoryKey].subCategories.add(post.subCategory);
+                }
+            }
+        });
+
+        // 3️⃣ Convert Set → Array
+        const result = Object.values(categoryMap).map((cat: any) => ({
+            category: cat.category,
+            subCategories: Array.from(cat.subCategories)
+        }));
+
+        return res.status(200).json(
+            ApiResponse.success("Categories fetched successfully", result)
+        );
+
+    } catch (error) {
+        next(error);
+    }
+};

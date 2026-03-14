@@ -13,6 +13,9 @@ export class Post extends Model {
     public video!: string;
     public communityId!: number;
 
+     public category!: string;
+    public subCategory!: string;
+
     // timestamps
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -59,6 +62,15 @@ Post.init(
                 key: 'id',
             },
         },
+        category: {
+    type: DataTypes.STRING,
+    allowNull: true,
+},
+
+subCategory: {
+    type: DataTypes.STRING,
+    allowNull: true,
+},
     },
     {
         sequelize,
