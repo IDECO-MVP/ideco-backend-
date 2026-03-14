@@ -1,6 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
+import e, { Request, Response, NextFunction } from 'express';
 import { Discussion } from './discussion.model';
 import { Project } from '../projects/project.model';
+import { File } from './file.model';
 import { User } from '../users/user.model';
 import { Profile } from '../profiles/profile.model';
 import { ApiResponse } from '../../utils/response';
@@ -33,7 +34,44 @@ export const createDiscussion = async (req: Request, res: Response, next: NextFu
             userId
         });
 
+        await File.create({
+            file: fileUrl,
+            projectId,
+            userId
+        });
+
         return res.status(201).json(ApiResponse.success('Discussion created successfully', discussion));
+    } catch (error: any) {
+        next(error);
+    }
+};
+
+/**
+ * upload a file
+ */
+
+export const uploadFile = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = (req as any).user.id;
+        const { projectId } = req.body;
+   
+        if (!projectId) {  
+            return res.status(400).json(ApiResponse.error('Project ID is required'));
+        }
+
+        let fileUrl = req.body.file || null;
+
+        if (req.file) {
+            fileUrl = await uploadToS3(req.file.buffer, 'discussions', req.file.originalname, req.file.mimetype);
+        }
+
+        const file = await File.create({
+            file: fileUrl,
+            projectId,
+            userId
+        });
+
+        return res.status(201).json(ApiResponse.success('File uploaded successfully', file));
     } catch (error: any) {
         next(error);
     }
@@ -71,11 +109,43 @@ export const getDiscussionsByProject = async (req: Request, res: Response, next:
     }
 };
 
+/**
+ * Get Latest 3 discussions by project ID
+ */
+export const getLatestDiscussionsByProject = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { projectId } = req.params;
+        const discussions = await Discussion.findAll({
+            where: { projectId: Number(projectId) },
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'email'],
+                    include: [
+                        {
+                            model: Profile,
+                            as: 'profile',
+                            attributes: ['fullName', 'avatar']
+                        }
+                    ]
+                }
+            ],
+            order: [['createdAt', 'DESC']],
+            limit: 3
+        });
+
+        return res.status(200).json(ApiResponse.success('Latest discussions fetched successfully', discussions));
+    } catch (error: any) {
+        next(error);
+    }
+};
+
 export const getAllFilesByProject = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { projectId } = req.params;
 
-        const discussions = await Discussion.findAll({
+        const files = await File.findAll({
             where: {
                 projectId: Number(projectId),
                 file: { [Op.ne]: null }
@@ -98,7 +168,7 @@ export const getAllFilesByProject = async (req: Request, res: Response, next: Ne
             order: [['createdAt', 'DESC']]
         });
 
-        const files = discussions.map((item: any) => {
+        const filesData = files.map((item: any) => {
             const url = item.file;
             const fileName = url.split('/').pop();
             const extension = fileName.split('.').pop();
@@ -114,7 +184,7 @@ export const getAllFilesByProject = async (req: Request, res: Response, next: Ne
         });
 
         return res.status(200).json(
-            ApiResponse.success('Files fetched successfully', files)
+            ApiResponse.success('Files fetched successfully', filesData)
         );
 
     } catch (error: any) {

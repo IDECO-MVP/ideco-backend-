@@ -15,7 +15,8 @@ import './modules/tasks/task.model';
 import './modules/featuredWorks/featuredWork.model';
 import './modules/community/community.model';
 import './modules/community/communityMember.model';
-
+import './modules/discussions/discussion.model';
+import './modules/discussions/file.model';
 
 const PORT = process.env.PORT || 5000;
 

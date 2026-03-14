@@ -8,6 +8,7 @@ import { parseInputArray } from '../../utils/parser';
 import { PostLike } from './postLike.model';
 import { PostSave } from './postSave.model';
 import { PostComment } from './postComment.model';
+import { Op } from 'sequelize';
 
 /**
  * Create a new post
@@ -69,7 +70,9 @@ export const getAllPosts = async (req: Request, res: Response, next: NextFunctio
                 { model: PostSave, as: 'saves', attributes: ['userId'] },
                 { model: PostComment, as: 'comments', attributes: ['id'] }
             ],
-            order: [['createdAt', 'DESC']]
+            order: [['createdAt', 'DESC']],
+            // not fetching isOnlyForCommunity : true
+         where: {    isOnlyForCommunity: null }
         });
         const postsResponse = posts.map((post) => {
             const postJson = post.toJSON() as any;
@@ -211,7 +214,7 @@ export const updatePost = async (req: Request, res: Response, next: NextFunction
             caption: req.body.caption || post.caption,
             hashtags: req.body.hashtags ? parseInputArray(req.body.hashtags) : post.hashtags,
             milestoneBadge: req.body.milestoneBadge || post.milestoneBadge,
-            communityId: req.body.communityId ? Number(req.body.communityId) : post.communityId
+            communityId: req.body.communityId ? Number(req.body.communityId) : post.communityId,
         });
 
         return res.status(200).json(ApiResponse.success('Post updated successfully', post));
