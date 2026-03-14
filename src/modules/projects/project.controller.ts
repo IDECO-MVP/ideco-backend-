@@ -10,6 +10,7 @@ import { FeaturedWork } from '../featuredWorks/featuredWork.model';
 import { Collaboration } from '../collaborations/collaboration.model';
 import { Profile } from "../profiles/profile.model";
 import { Task } from '../tasks/task.model';
+import { createWorkspacePod } from '../chat/chat.service';
 
 /**
  * Common helper to check if a user has applied to projects
@@ -70,6 +71,9 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
             communityId: communityId ? Number(communityId) : undefined,
             category
         });
+
+        // Create a Workspace Pod (group chat) for the project automatically
+        await createWorkspacePod(project.id, project.title, userId);
 
         // Sync with FeaturedWork if addInFeuturedWork is true
         if (project.addInFeuturedWork) {

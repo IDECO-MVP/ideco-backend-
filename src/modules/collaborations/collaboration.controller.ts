@@ -5,6 +5,7 @@ import { User } from '../users/user.model';
 import { ApiResponse } from '../../utils/response';
 import { Profile } from '../profiles/profile.model';
 import { userWithProfileInclude } from '../users/user.service';
+import { addMemberToPod } from '../chat/chat.service';
 
 /**
  * Apply to a project
@@ -142,6 +143,11 @@ export const updateCollaborationStatus = async (req: Request, res: Response, nex
         }
 
         await collaboration.update({ status });
+
+        // If approved, automatically add to Workspace Pod
+        if (status === 'approved') {
+            await addMemberToPod(collaboration.projectId, collaboration.userId);
+        }
 
         return res.status(200).json(ApiResponse.success(`Collaboration request ${status} successfully`, collaboration));
     } catch (error: any) {

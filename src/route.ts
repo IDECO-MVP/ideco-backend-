@@ -12,6 +12,7 @@ import taskRoute from './modules/tasks/task.route';
 import featuredWorkRoute from './modules/featuredWorks/featuredWork.route';
 import discussionRoute from './modules/discussions/discussion.route';
 import communityRoute from './modules/community/community.route';
+import chatRoute from './modules/chat/chat.route';
 
 const router = Router();
 
@@ -28,5 +29,6 @@ router.use('/tasks', taskRoute);
 router.use('/featured-works', featuredWorkRoute);
 router.use('/discussions', discussionRoute);
 router.use('/community', communityRoute);
+router.use('/chat', chatRoute);
 
 export default router;
