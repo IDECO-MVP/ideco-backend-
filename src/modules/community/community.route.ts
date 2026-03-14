@@ -15,6 +15,7 @@ import {
     getPostsByCommunityId,
     getProjectsByCommunityId
 } from './community.controller';
+import { createEvent, deleteEvent, getEventsByCommunityId } from './communityEvent.controller';
 
 const router = Router();
 
@@ -38,5 +39,14 @@ router.get('/posts/:communityId', optionalAuthMiddleware, getPostsByCommunityId)
 
 // Projects
 router.get('/projects/:communityId', optionalAuthMiddleware, getProjectsByCommunityId);
+
+
+// community events routes
+
+router.post('/events',authMiddleware, createEvent);
+
+router.get('/events/:communityId/', getEventsByCommunityId);
+
+router.delete('/events/:eventId', authMiddleware , deleteEvent);
 
 export default router;
