@@ -9,6 +9,7 @@ export class CommunityMember extends Model {
     public userId!: number;
     public role!: string;
     public joinedAt!: Date;
+    public lastSeenAt!: Date;
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -21,6 +22,7 @@ CommunityMember.init(
         userId: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'users', key: 'id' } },
         role: { type: DataTypes.ENUM('admin', 'member'), defaultValue: 'member' },
         joinedAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+        lastSeenAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
     },
     { sequelize, modelName: 'CommunityMember', tableName: 'communityMembers', timestamps: true }
 );

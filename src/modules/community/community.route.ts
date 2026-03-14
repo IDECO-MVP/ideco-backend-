@@ -13,7 +13,9 @@ import {
     getCommunityMembers,
     getJoinedCommunities,
     getPostsByCommunityId,
-    getProjectsByCommunityId
+    getProjectsByCommunityId,
+    getUnreadCounts,
+    markCommunityAsRead
 } from './community.controller';
 import { createEvent, deleteEvent, getEventsByCommunityId } from './communityEvent.controller';
 
@@ -23,6 +25,8 @@ const router = Router();
 router.post('/', authMiddleware, upload.fields([{ name: 'logoImage', maxCount: 1 }, { name: 'coverImage', maxCount: 1 }]), createCommunity);
 router.get('/', optionalAuthMiddleware, getCommunities);
 router.get('/joined/me', authMiddleware, getJoinedCommunities);
+router.get('/unread/counts', authMiddleware, getUnreadCounts);
+router.post('/unread/:communityId/mark-read', authMiddleware, markCommunityAsRead);
 router.get('/:communityId', optionalAuthMiddleware, getCommunityById);
 router.put('/:communityId', authMiddleware, upload.fields([{ name: 'logoImage', maxCount: 1 }, { name: 'coverImage', maxCount: 1 }]), updateCommunity);
 router.delete('/:communityId', authMiddleware, deleteCommunity);
@@ -43,10 +47,10 @@ router.get('/projects/:communityId', optionalAuthMiddleware, getProjectsByCommun
 
 // community events routes
 
-router.post('/events',authMiddleware, createEvent);
+router.post('/events', authMiddleware, createEvent);
 
 router.get('/events/:communityId/', getEventsByCommunityId);
 
-router.delete('/events/:eventId', authMiddleware , deleteEvent);
+router.delete('/events/:eventId', authMiddleware, deleteEvent);
 
 export default router;

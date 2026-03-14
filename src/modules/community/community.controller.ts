@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { Op } from 'sequelize';
 import { ApiResponse } from '../../utils/response';
 import { Community } from './community.model';
 import { CommunityMember } from './communityMember.model';
@@ -8,6 +9,7 @@ import { Post } from '../posts/post.model';
 import { Project } from '../projects/project.model';
 import { Task } from '../tasks/task.model';
 import { Collaboration } from '../collaborations/collaboration.model';
+import { CommunityEvent } from './communityEvent.model';
 import { uploadToS3 } from '../../utils/s3';
 import { parseInputArray } from '../../utils/parser';
 
@@ -377,5 +379,83 @@ export const getProjectsByCommunityId = async (req: Request, res: Response) => {
         return res.status(200).json(ApiResponse.success('Projects fetched successfully', formatted));
     } catch (error: any) {
         return res.status(500).json(ApiResponse.error('Error fetching projects', error.message));
+    }
+};
+
+export const getUnreadCounts = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.id;
+
+        // Get all communities the user is a member of
+        const members = await CommunityMember.findAll({
+            where: { userId },
+        });
+
+        const unreadData = await Promise.all(
+            members.map(async (member) => {
+                const { communityId, lastSeenAt } = member;
+
+                const [postCount, projectCount, eventCount] = await Promise.all([
+                    Post.count({
+                        where: {
+                            communityId,
+                            createdAt: { [Op.gt]: lastSeenAt },
+                        },
+                    }),
+                    Project.count({
+                        where: {
+                            communityId,
+                            createdAt: { [Op.gt]: lastSeenAt },
+                        },
+                    }),
+                    CommunityEvent.count({
+                        where: {
+                            communityId,
+                            createdAt: { [Op.gt]: lastSeenAt },
+                        },
+                    }),
+                ]);
+
+                return {
+                    communityId,
+                    postCount,
+                    projectCount,
+                    eventCount,
+                    total: postCount + projectCount + eventCount,
+                };
+            })
+        );
+
+        const totalUnread = unreadData.reduce((acc, curr) => acc + curr.total, 0);
+
+        return res.status(200).json(
+            ApiResponse.success('Unread counts fetched successfully', {
+                totalUnread,
+                communities: unreadData,
+            })
+        );
+    } catch (error: any) {
+        return res.status(500).json(ApiResponse.error('Error fetching unread counts', error.message));
+    }
+};
+
+export const markCommunityAsRead = async (req: Request, res: Response) => {
+    try {
+        const { communityId } = req.params;
+        const userId = (req as any).user.id;
+
+        const member = await CommunityMember.findOne({
+            where: { communityId: Number(communityId), userId },
+        });
+
+        if (!member) {
+            return res.status(404).json(ApiResponse.error('You are not a member of this community'));
+        }
+
+        await member.update({ lastSeenAt: new Date() });
+
+        return res.status(200).json(ApiResponse.success('Community marked as read', null));
+    } catch (error: any) {
+        return res.status(500).json(ApiResponse.error('Error marking community as read', error.message));
     }
 };
