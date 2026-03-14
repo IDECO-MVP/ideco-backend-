@@ -162,6 +162,13 @@ export const getAllOpenProjects = async (req: Request, res: Response, next: Next
                     model: User,
                     as: "user",
                     attributes: ["id", "email"],
+                    include: [
+                        {
+                            model: Profile,
+                            as: "profile",
+                            attributes: ["fullName"]
+                        }
+                    ]
                 },
                 {
                     model: Collaboration,

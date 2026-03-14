@@ -22,7 +22,6 @@ export const registerDmHandlers = (io: Server, socket: Socket) => {
     socket.on(SOCKET_EVENTS.DM_JOIN, () => {
         const personalRoom = `user:${userId}`;
         socket.join(personalRoom);
-        console.log(`[Socket] User ${userId} joined personal room ${personalRoom}`);
     });
 
     // ─── Send a DM ────────────────────────────────────────────────────────────

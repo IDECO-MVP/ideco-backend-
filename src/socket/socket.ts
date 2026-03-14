@@ -47,7 +47,6 @@ export const initSocket = (httpServer: HttpServer): Server => {
     // ─── Connection Handler ───────────────────────────────────────────────────
     io.on(SOCKET_EVENTS.CONNECT, (socket: Socket) => {
         const userId = (socket as any).userId;
-        console.log(`[Socket] User ${userId} connected (socket: ${socket.id})`);
 
         // Each user automatically joins their personal room on connect
         socket.join(`user:${userId}`);
@@ -58,7 +57,6 @@ export const initSocket = (httpServer: HttpServer): Server => {
 
         // ─── Disconnect ───────────────────────────────────────────────────────
         socket.on(SOCKET_EVENTS.DISCONNECT, (reason) => {
-            console.log(`[Socket] User ${userId} disconnected (reason: ${reason})`);
         });
 
         // ─── Global error handler ─────────────────────────────────────────────

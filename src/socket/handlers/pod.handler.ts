@@ -17,6 +17,10 @@ export const registerPodHandlers = (io: Server, socket: Socket) => {
     // ─── Join a pod room ──────────────────────────────────────────────────────
     socket.on(SOCKET_EVENTS.POD_JOIN, async ({ podId }: { podId: number }) => {
         try {
+            if (!podId) {
+                socket.emit(SOCKET_EVENTS.ERROR, { message: 'podId is required to join a pod' });
+                return;
+            }
             const member = await isPodMember(podId, userId);
             if (!member) {
                 socket.emit(SOCKET_EVENTS.ERROR, { message: 'You are not a member of this workspace pod' });
@@ -25,7 +29,6 @@ export const registerPodHandlers = (io: Server, socket: Socket) => {
 
             const room = `pod:${podId}`;
             socket.join(room);
-            console.log(`[Socket] User ${userId} joined ${room}`);
         } catch (err: any) {
             console.error('[Socket] POD_JOIN error:', err.message);
             socket.emit(SOCKET_EVENTS.ERROR, { message: 'Failed to join pod' });
@@ -36,7 +39,6 @@ export const registerPodHandlers = (io: Server, socket: Socket) => {
     socket.on(SOCKET_EVENTS.POD_LEAVE, ({ podId }: { podId: number }) => {
         const room = `pod:${podId}`;
         socket.leave(room);
-        console.log(`[Socket] User ${userId} left ${room}`);
     });
 
     // ─── Send a message to a pod ──────────────────────────────────────────────
